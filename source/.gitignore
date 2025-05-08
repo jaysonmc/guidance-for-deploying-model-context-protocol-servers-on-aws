@@ -1,0 +1,15 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+!lib/lambda/validator/index.js
+!lib/lambda/oauth-callback/index.js
+
+__pycache__
+*.pyc
+*.env

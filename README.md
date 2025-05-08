@@ -1,215 +1,278 @@
-# Guidance Title (required)
+# Guidance for Deploying Model Context Protocol Servers on AWS
 
-The Guidance title should be consistent with the title established first in Alchemy.
+## Table of Contents
 
-**Example:** *Guidance for Product Substitutions on AWS*
+1. [Overview](#overview)
+   - [Cost](#cost)
+2. [Prerequisites](#prerequisites)
+   - [Operating System](#operating-system)
+3. [Deployment Steps](#deployment-steps)
+4. [Deployment Validation](#deployment-validation)
+5. [Running the Guidance](#running-the-guidance)
+6. [Next Steps](#next-steps)
+7. [Cleanup](#cleanup)
+8. [FAQ, known issues, additional considerations, and limitations](#faq-known-issues-additional-considerations-and-limitations)
+9. [Revisions](#revisions)
+10. [Notices](#notices)
 
-This title correlates exactly to the Guidance it’s linked to, including its corresponding sample code repository. 
+## Overview
 
+This guidance demonstrates how to deploy Model Context Protocol (MCP) servers on AWS with secure authentication using Amazon Cognito. It enables you to host MCP servers that can be accessed remotely while maintaining security through OAuth 2.0 authentication flows.
 
-## Table of Contents (required)
+The solution addresses several key challenges:
 
-List the top-level sections of the README template, along with a hyperlink to the specific section.
+- Secure hosting of MCP servers on AWS infrastructure
+- Authentication and authorization using AWS Cognito
+- Remote access to MCP servers through secure endpoints
+- Scalable and maintainable deployment using AWS CDK
 
-### Required
+### Architecture
 
-1. [Overview](#overview-required)
-    - [Cost](#cost)
-2. [Prerequisites](#prerequisites-required)
-    - [Operating System](#operating-system-required)
-3. [Deployment Steps](#deployment-steps-required)
-4. [Deployment Validation](#deployment-validation-required)
-5. [Running the Guidance](#running-the-guidance-required)
-6. [Next Steps](#next-steps-required)
-7. [Cleanup](#cleanup-required)
+![Architecture Diagram](assets/architecture-diagram.png)
 
-***Optional***
+The architecture implements:
 
-8. [FAQ, known issues, additional considerations, and limitations](#faq-known-issues-additional-considerations-and-limitations-optional)
-9. [Revisions](#revisions-optional)
-10. [Notices](#notices-optional)
-11. [Authors](#authors-optional)
+1. CloudFront distribution for global content delivery
+2. Application Load Balancer for traffic distribution
+3. ECS Fargate for containerized MCP servers
+4. AWS Cognito for user authentication
+5. AWS WAF for security
+6. DynamoDB for token storage
 
-## Overview (required)
+### Cost
 
-1. Provide a brief overview explaining the what, why, or how of your Guidance. You can answer any one of the following to help you write this:
+You are responsible for the cost of the AWS services used while running this Guidance. As of May 2025, the cost for running this Guidance with the default settings in the US East (N. Virginia) Region is approximately $189.97 per month for processing moderate traffic levels.
 
-    - **Why did you build this Guidance?**
-    - **What problem does this Guidance solve?**
+We recommend creating a [Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) through [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/) to help manage costs. Prices are subject to change. For full details, refer to the pricing webpage for each AWS service used in this Guidance.
 
-2. Include the architecture diagram image, as well as the steps explaining the high-level overview and flow of the architecture. 
-    - To add a screenshot, create an ‘assets/images’ folder in your repository and upload your screenshot to it. Then, using the relative file path, add it to your README. 
-
-### Cost ( required )
-
-This section is for a high-level cost estimate. Think of a likely straightforward scenario with reasonable assumptions based on the problem the Guidance is trying to solve. Provide an in-depth cost breakdown table in this section below ( you should use AWS Pricing Calculator to generate cost breakdown ).
-
-Start this section with the following boilerplate text:
-
-_You are responsible for the cost of the AWS services used while running this Guidance. As of <month> <year>, the cost for running this Guidance with the default settings in the <Default AWS Region (Most likely will be US East (N. Virginia)) > is approximately $<n.nn> per month for processing ( <nnnnn> records )._
-
-Replace this amount with the approximate cost for running your Guidance in the default Region. This estimate should be per month and for processing/serving resonable number of requests/entities.
-
-Suggest you keep this boilerplate text:
-_We recommend creating a [Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) through [AWS Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/) to help manage costs. Prices are subject to change. For full details, refer to the pricing webpage for each AWS service used in this Guidance._
-
-### Sample Cost Table ( required )
-
-**Note : Once you have created a sample cost table using AWS Pricing Calculator, copy the cost breakdown to below table and upload a PDF of the cost estimation on BuilderSpace. Do not add the link to the pricing calculator in the ReadMe.**
+#### Estimated Cost Table
 
 The following table provides a sample cost breakdown for deploying this Guidance with the default parameters in the US East (N. Virginia) Region for one month.
 
-| AWS service  | Dimensions | Cost [USD] |
-| ----------- | ------------ | ------------ |
-| Amazon API Gateway | 1,000,000 REST API calls per month  | $ 3.50month |
-| Amazon Cognito | 1,000 active users per month without advanced security feature | $ 0.00 |
+| AWS service            | Dimensions                                         | Cost [USD]        |
+| ---------------------- | -------------------------------------------------- | ----------------- |
+| VPC (NAT Gateway)      | 1 NAT Gateway × 730 hours + 100 GB data processing | $32.85            |
+| Elastic Load Balancing | Application Load Balancer with moderate traffic    | $18.62            |
+| Amazon Cognito         | 10,500 MAUs (500 above free tier)                  | $7.50             |
+| CloudFront             | 2 TB data transfer + 15M requests                  | $85.00            |
+| WAF                    | 2 Web ACLs (CloudFront and Regional)               | $10.00            |
+| DynamoDB               | Token storage with on-demand capacity              | $5.40             |
+| ECS (Fargate)          | 1 vCPU, 2GB memory × 730 hours                     | $30.00            |
+| Secrets Manager        | 1 secret for Cognito credentials                   | $0.40             |
+| Lambda                 | Custom resources (minimal usage)                   | $0.20             |
+| **Total**              |                                                    | **$189.97/month** |
 
-## Prerequisites (required)
+## Prerequisites
 
-### Operating System (required)
+### Operating System
 
-- Talk about the base Operating System (OS) and environment that can be used to run or deploy this Guidance, such as *Mac, Linux, or Windows*. Include all installable packages or modules required for the deployment. 
-- By default, assume Amazon Linux 2/Amazon Linux 2023 AMI as the base environment. All packages that are not available by default in AMI must be listed out.  Include the specific version number of the package or module.
+These deployment instructions are optimized to work on **Amazon Linux 2 AMI**. Deployment in another OS may require additional steps.
 
-**Example:**
-“These deployment instructions are optimized to best work on **<Amazon Linux 2 AMI>**.  Deployment in another OS may require additional steps.”
+### Required Tools
 
-- Include install commands for packages, if applicable.
+1. [AWS CLI](https://aws.amazon.com/cli/) installed and configured
+2. [Node.js](https://nodejs.org/) v14 or later
+3. [AWS CDK](https://aws.amazon.com/cdk/) installed:
+   ```bash
+   npm install -g aws-cdk
+   ```
 
+### AWS Account Requirements
 
-### Third-party tools (If applicable)
+1. AWS account with administrative access
+2. Enabled services:
+   - Amazon Cognito
+   - Amazon ECS
+   - AWS CloudFront
+   - Amazon DynamoDB
+   - AWS WAF
+   - AWS Secrets Manager
 
-*List any installable third-party tools required for deployment.*
+### AWS CDK Bootstrap
 
+If you're using AWS CDK for the first time, bootstrap your account:
 
-### AWS account requirements (If applicable)
+```bash
+cdk bootstrap
+```
 
-*List out pre-requisites required on the AWS account if applicable, this includes enabling AWS regions, requiring ACM certificate.*
+## Deployment Steps
 
-**Example:** “This deployment requires you have public ACM certificate available in your AWS account”
+1. Clone the repository:
 
-**Example resources:**
-- ACM certificate 
-- DNS record
-- S3 bucket
-- VPC
-- IAM role with specific permissions
-- Enabling a Region or service etc.
+   ```bash
+   git clone <repository-url>
+   cd guidance-for-remote-mcp-servers-on-aws
+   cd source
+   ```
 
+2. Install dependencies:
 
-### aws cdk bootstrap (if sample code has aws-cdk)
+   ```bash
+   npm install
+   ```
 
-<If using aws-cdk, include steps for account bootstrap for new cdk users.>
+3. Deploy the stacks:
 
-**Example blurb:** “This Guidance uses aws-cdk. If you are using aws-cdk for first time, please perform the below bootstrapping....”
+   ```bash
+   cdk deploy --all
+   ```
 
-### Service limits  (if applicable)
+4. (Optional) Configure custom domain:
+   ```bash
+   cdk deploy --all --context certificateArn=arn:aws:acm:... --context customDomain=mcp-server.example.com
+   ```
 
-<Talk about any critical service limits that affect the regular functioning of the Guidance. If the Guidance requires service limit increase, include the service name, limit name and link to the service quotas page.>
+## Deployment Validation
 
-### Supported Regions (if applicable)
+1. Verify CloudFormation stack status:
 
-<If the Guidance is built for specific AWS Regions, or if the services used in the Guidance do not support all Regions, please specify the Region this Guidance is best suited for>
+   - Open AWS CloudFormation console
+   - Check that all stacks show "CREATE_COMPLETE"
 
+2. Validate Cognito setup:
 
-## Deployment Steps (required)
+   - Open Amazon Cognito console
+   - Verify User Pool creation
+   - Confirm App Client configuration
 
-Deployment steps must be numbered, comprehensive, and usable to customers at any level of AWS expertise. The steps must include the precise commands to run, and describe the action it performs.
+3. Verify infrastructure:
+   - CloudFront distribution is "Deployed"
+   - Application Load Balancer is "Active"
+   - ECS services are running
 
-* All steps must be numbered.
-* If the step requires manual actions from the AWS console, include a screenshot if possible.
-* The steps must start with the following command to clone the repo. ```git clone xxxxxxx```
-* If applicable, provide instructions to create the Python virtual environment, and installing the packages using ```requirement.txt```.
-* If applicable, provide instructions to capture the deployed resource ARN or ID using the CLI command (recommended), or console action.
+## Running the Guidance
 
- 
-**Example:**
+### Testing with mcp-remote
 
-1. Clone the repo using command ```git clone xxxxxxxxxx```
-2. cd to the repo folder ```cd <repo-name>```
-3. Install packages in requirements using command ```pip install requirement.txt```
-4. Edit content of **file-name** and replace **s3-bucket** with the bucket name in your account.
-5. Run this command to deploy the stack ```cdk deploy``` 
-6. Capture the domain name created by running this CLI command ```aws apigateway ............```
+![mcp-remote](assets/mcp-remote.gif)
 
+The [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) utility enables MCP clients that only support local (stdio) servers to connect to remote MCP servers with authentication support. While this tool is considered experimental, it provides a crucial bridge for testing and development.
 
+### Why mcp-remote?
+
+Most MCP servers are currently installed locally using stdio transport, which offers benefits like implicit trust between client and server, secure handling of API keys via environment variables, and simplified installation through tools like `npx` and `uvx`.
 
-## Deployment Validation  (required)
+However, web-based deployment offers significant advantages for development and maintenance:
+
+- Easier bug fixing and feature iteration through centralized updates
+- No need to run code on users' machines
+- Simplified distribution and version management
+
+While the MCP Authorization specification now provides a secure way to share MCP servers remotely, many popular MCP clients are still stdio-only or lack support for OAuth flows. The `mcp-remote` utility bridges this gap until clients implement native support for remote, authorized servers.
 
-<Provide steps to validate a successful deployment, such as terminal output, verifying that the resource is created, status of the CloudFormation template, etc.>
+1. Install mcp-remote:
+
+   ```bash
+   npm install -g mcp-remote
+   ```
 
+2. Create configuration (e.g., `config.json`):
 
-**Examples:**
+   ```json
+   {
+     "mcpServers": {
+       "weather-sse-python": {
+         "command": "npx",
+         "args": [
+           "mcp-remote@latest",
+           "https://<your-cloudfront-endpoint>/weather-python/sse"
+         ]
+       },
+       "weather-streamable-nodejs": {
+         "command": "npx",
+         "args": [
+           "mcp-remote@latest",
+           "https://<your-cloudfront-endpoint>/weather-nodejs/mcp"
+         ]
+       },
+       "weather-streamable-nodejs-lambda": {
+         "command": "npx",
+         "args": [
+           "mcp-remote@latest",
+           "https://<your-cloudfront-endpoint>/weather-nodejs-lambda/mcp"
+         ]
+       }
+     }
+   }
+   ```
 
-* Open CloudFormation console and verify the status of the template with the name starting with xxxxxx.
-* If deployment is successful, you should see an active database instance with the name starting with <xxxxx> in        the RDS console.
-*  Run the following CLI command to validate the deployment: ```aws cloudformation describe xxxxxxxxxxxxx```
+3. Test the connection:
+   ```bash
+   npx mcp-remote@latest https://<your-cloudfront-endpoint>/weather-python/sse
+   ```
 
+## Next Steps
 
+1. Implement additional MCP servers:
 
-## Running the Guidance (required)
+   - Add new server containers to ECS
+   - Configure OAuth flows for new servers
+   - Update mcp-remote configuration
 
-<Provide instructions to run the Guidance with the sample data or input provided, and interpret the output received.> 
+2. Optimize costs:
 
-This section should include:
+   - Monitor usage patterns
+   - Consider reserved capacity for steady workloads
+   - Implement caching strategies
 
-* Guidance inputs
-* Commands to run
-* Expected output (provide screenshot if possible)
-* Output description
+3. Enhance security:
+   - Enable MFA in Cognito
+   - Implement additional WAF rules
+   - Set up monitoring and alerting
 
+## Cleanup
 
+1. Remove deployed resources:
 
-## Next Steps (required)
+   ```bash
+   cdk destroy --all
+   ```
 
-Provide suggestions and recommendations about how customers can modify the parameters and the components of the Guidance to further enhance it according to their requirements.
+2. Manual cleanup steps:
+   - Empty any created S3 buckets
+   - Delete Cognito User Pool (if not needed)
+   - Remove CloudWatch log groups
+   - Delete any created secrets in Secrets Manager
 
+## FAQ, known issues, additional considerations, and limitations
 
-## Cleanup (required)
+### Known Issues
 
-- Include detailed instructions, commands, and console actions to delete the deployed Guidance.
-- If the Guidance requires manual deletion of resources, such as the content of an S3 bucket, please specify.
+1. Token refresh may require re-authentication in some cases
+2. CloudFront cache invalidation may take up to 5 minutes
+3. Initial cold start delay for Fargate containers
 
+### Additional Considerations
 
+- Public endpoints are created for OAuth flows
+- CloudFront distributions may take 15-20 minutes to deploy
+- DynamoDB tables use on-demand capacity by default
 
-## FAQ, known issues, additional considerations, and limitations (optional)
+For detailed information, refer to these additional documentation files:
 
+- [Monthly Cost Estimate Report](assets/cost-estimate-report.md)
+- [Basic OAuth Flow](assets/mcp-cognito-oauth-flow.md)
+- [Detailed OAuth Flow](assets/detailed-mcp-cognito-oauth-flow.md)
+- [AWS Architecture](assets/aws-cognito-mcp-integration.md)
+- [Token Binding & Validation](assets/token-binding-validation-flow.md)
 
-**Known issues (optional)**
+### Limitations
 
-<If there are common known issues, or errors that can occur during the Guidance deployment, describe the issue and resolution steps here>
+1. Region availability depends on AWS Cognito support
+2. Custom domains require ACM certificates in us-east-1
+3. Some MCP clients may not support remote connections
 
+For any feedback, questions, or suggestions, please use the issues tab under this repo.
 
-**Additional considerations (if applicable)**
+## Revisions
 
-<Include considerations the customer must know while using the Guidance, such as anti-patterns, or billing considerations.>
+### [1.0.0] - 2025-05-06
 
-**Examples:**
+- Initial release
+- Basic OAuth flow implementation
+- Support for weather sample servers
 
-- “This Guidance creates a public AWS bucket required for the use-case.”
-- “This Guidance created an Amazon SageMaker notebook that is billed per hour irrespective of usage.”
-- “This Guidance creates unauthenticated public API endpoints.”
+## Notices
 
-
-Provide a link to the *GitHub issues page* for users to provide feedback.
-
-
-**Example:** *“For any feedback, questions, or suggestions, please use the issues tab under this repo.”*
-
-## Revisions (optional)
-
-Document all notable changes to this project.
-
-Consider formatting this section based on Keep a Changelog, and adhering to Semantic Versioning.
-
-## Notices (optional)
-
-Include a legal disclaimer
-
-**Example:**
-*Customers are responsible for making their own independent assessment of the information in this Guidance. This Guidance: (a) is for informational purposes only, (b) represents AWS current product offerings and practices, which are subject to change without notice, and (c) does not create any commitments or assurances from AWS and its affiliates, suppliers or licensors. AWS products or services are provided “as is” without warranties, representations, or conditions of any kind, whether express or implied. AWS responsibilities and liabilities to its customers are controlled by AWS agreements, and this Guidance is not part of, nor does it modify, any agreement between AWS and its customers.*
-
-
-## Authors (optional)
-
-Name of code contributors
+Customers are responsible for making their own independent assessment of the information in this Guidance. This Guidance: (a) is for informational purposes only, (b) represents AWS current product offerings and practices, which are subject to change without notice, and (c) does not create any commitments or assurances from AWS and its affiliates, suppliers or licensors. AWS products or services are provided "as is" without warranties, representations, or conditions of any kind, whether express or implied. AWS responsibilities and liabilities to its customers are controlled by AWS agreements, and this Guidance is not part of, nor does it modify, any agreement between AWS and its customers.

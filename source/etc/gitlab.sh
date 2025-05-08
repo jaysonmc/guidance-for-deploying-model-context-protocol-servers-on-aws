@@ -1,0 +1,1 @@
+mwinit -k ~/.ssh/id_ecdsa.pub
