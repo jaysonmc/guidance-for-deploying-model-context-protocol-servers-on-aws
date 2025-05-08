@@ -59,6 +59,7 @@ const serverStack = new MCPServerStack(app, "MCP-Server", {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
   },
+  description: "Guidance for Deploying Model Context Servers on AWS (SO9018)",
   resourceSuffix,
   vpc: vpcStack.vpc,
   cognitoUserPool: securityStack.userPool,
