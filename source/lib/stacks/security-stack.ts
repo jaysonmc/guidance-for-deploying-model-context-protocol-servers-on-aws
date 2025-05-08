@@ -127,6 +127,9 @@ export class SecurityStack extends cdk.Stack {
         adminUserPassword: true,
         userSrp: true,
       },
+      accessTokenValidity: cdk.Duration.minutes(60), // default is 60 minutes
+      idTokenValidity: cdk.Duration.minutes(60), // default is 60 minutes
+      refreshTokenValidity: cdk.Duration.days(30), // default is 30 days
       oAuth: {
         flows: {
           authorizationCodeGrant: true,
