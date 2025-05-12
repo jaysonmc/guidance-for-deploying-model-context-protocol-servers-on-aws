@@ -11,4 +11,4 @@ __pycache__
 *.pyc
 *.env
 
-!source/lib/lambdas/cognito-redirect-updater/index.js
+!lib/lambdas/cognito-redirect-updater/index.js
