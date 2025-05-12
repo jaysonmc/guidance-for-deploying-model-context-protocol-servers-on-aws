@@ -7,9 +7,8 @@ node_modules
 .cdk.staging
 cdk.out
 
-!lib/lambda/validator/index.js
-!lib/lambda/oauth-callback/index.js
-
 __pycache__
 *.pyc
 *.env
+
+!source/lib/lambdas/cognito-redirect-updater/index.js
