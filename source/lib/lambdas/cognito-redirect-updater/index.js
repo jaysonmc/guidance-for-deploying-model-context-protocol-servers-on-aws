@@ -11,7 +11,7 @@ exports.handler = async function (event, context) {
   console.log("Event:", JSON.stringify(event, null, 2));
 
   try {
-    // For CREATE and UPDATE events, we need to update the app client for Cognito
+    // For CREATE and UPDATE events, we need to update the app client
     if (event.RequestType === "Create" || event.RequestType === "Update") {
       const props = event.ResourceProperties;
       const userPoolId = props.UserPoolId;
