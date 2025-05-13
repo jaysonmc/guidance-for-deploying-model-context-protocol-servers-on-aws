@@ -143,6 +143,18 @@ cdk bootstrap
 
 ## Running the Guidance
 
+### Testing with Cognito Users (Development Only)
+
+For development and testing environments only, you can quickly create and manage users with AWS CLI:
+
+```bash
+# Create test user
+aws cognito-idp admin-create-user --user-pool-id YOUR_USER_POOL_ID --username test@example.com
+
+# Set permanent password (bypass temporary)
+aws cognito-idp admin-set-user-password --user-pool-id YOUR_USER_POOL_ID --username test@example.com --password "TestPass123!" --permanent
+```
+
 ### Testing with mcp-remote
 
 ![mcp-remote](assets/mcp-remote.gif)
@@ -160,6 +172,8 @@ However, web-based deployment offers significant advantages for development and 
 - Simplified distribution and version management
 
 While the MCP Authorization specification now provides a secure way to share MCP servers remotely, many popular MCP clients are still stdio-only or lack support for OAuth flows. The `mcp-remote` utility bridges this gap until clients implement native support for remote, authorized servers.
+
+> **Note:** mcp-remote is just *one* way to test this implementation. Our Dynamic Client Registration (DCR) implementation is only registering a single redirect URI per client. If you encounter an error related to this, you can always clear the `~/.mcp-auth` directory to redo this process.
 
 1. Install mcp-remote:
 
