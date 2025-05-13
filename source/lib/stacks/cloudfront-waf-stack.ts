@@ -318,7 +318,7 @@ async function sendResponse(event, context, responseStatus, responseData) {
           reason:
             "Lambda function used by CloudFront WAF cross-region sync custom resource requires access to SSM parameters using consistent prefix for WAF ARN storage",
           appliesTo: [
-            "Resource::arn:aws:ssm:us-west-2:<AWS::AccountId>:parameter/mcp/cloudfront-waf-*",
+            `Resource::arn:aws:ssm:${props.targetRegion}:<AWS::AccountId>:parameter/mcp/cloudfront-waf-*`,
           ],
         },
       ],
