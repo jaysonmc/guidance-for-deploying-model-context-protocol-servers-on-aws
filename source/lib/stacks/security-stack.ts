@@ -17,6 +17,7 @@ export interface SecurityStackProps extends cdk.StackProps {
    * Resource suffix for unique naming
    */
   resourceSuffix: string;
+  domainSuffix: string
 }
 
 export class SecurityStack extends cdk.Stack {
@@ -59,11 +60,8 @@ export class SecurityStack extends cdk.Stack {
     });
 
     // Add domain for hosted UI
-    // Use a simplified stack ID (removing non-compliant characters)
-    const domainPrefix = `mcp-server-${props.resourceSuffix
-      .substring(0, 8)
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "")}`;
+    const domainPrefix = `mcp-server-${props.domainSuffix}`;
+    
     this.userPool.addDomain("CognitoDomain", {
       cognitoDomain: {
         domainPrefix,

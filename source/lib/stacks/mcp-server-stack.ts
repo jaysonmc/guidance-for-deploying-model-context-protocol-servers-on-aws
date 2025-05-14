@@ -29,6 +29,7 @@ export interface MCPServerStackProps extends cdk.StackProps {
   cognitoUserPool: cognito.UserPool;
   userPoolClientId: string;
   userPoolClientSecret: cdk.SecretValue;
+  domainSuffix: string;
 }
 
 /**
@@ -56,8 +57,18 @@ export class MCPServerStack extends cdk.Stack {
     // Create shared ECS cluster for all MCP servers
     this.cluster = new ecs.Cluster(this, "MCPCluster", {
       vpc: props.vpc,
-      containerInsights: true,
+      //containerInsights: true,
+      containerInsightsV2: ecs.ContainerInsights.ENHANCED
     });
+
+    // Add suppression for Container Insight (Deprecated) not be enabled while Container Insight V2 is enabled
+    NagSuppressions.addResourceSuppressions(this.cluster, [
+      {
+        id: "AwsSolutions-ECS4",
+        reason:
+          "Container Insights V2 is Enabled with Enhanced capabilities, the Nag findings is about Container Insights (v1) which is deprecated",
+      },
+    ]);
 
     // Create context parameter for optional certificate ARN and custom domain
     const certificateArn = this.node.tryGetContext("certificateArn");
@@ -199,7 +210,7 @@ export class MCPServerStack extends cdk.Stack {
           AWS_REGION: this.region,
           COGNITO_USER_POOL_ID: props.cognitoUserPool.userPoolId,
           COGNITO_CLIENT_ID: props.userPoolClientId,
-          COGNITO_DOMAIN: `mcp-server-${props.resourceSuffix}`,
+          COGNITO_DOMAIN: `mcp-server-${props.domainSuffix}`,
           TOKEN_TABLE_NAME: tokenTable.tableName, // Pass the DynamoDB table name
         },
         secrets: {
@@ -238,7 +249,7 @@ export class MCPServerStack extends cdk.Stack {
           AWS_REGION: this.region,
           COGNITO_USER_POOL_ID: props.cognitoUserPool.userPoolId,
           COGNITO_CLIENT_ID: props.userPoolClientId,
-          COGNITO_DOMAIN: `mcp-server-${props.resourceSuffix}`,
+          COGNITO_DOMAIN: `mcp-server-${props.domainSuffix}`,
           TOKEN_TABLE_NAME: tokenTable.tableName, // Pass the DynamoDB table name
         },
         tokenTable: tokenTable, // Pass the table resource to grant permissions
@@ -272,7 +283,7 @@ export class MCPServerStack extends cdk.Stack {
           AWS_REGION: this.region,
           COGNITO_USER_POOL_ID: props.cognitoUserPool.userPoolId,
           COGNITO_CLIENT_ID: props.userPoolClientId,
-          COGNITO_DOMAIN: `mcp-server-${props.resourceSuffix}`,
+          COGNITO_DOMAIN: `mcp-server-${props.domainSuffix}`,
           TOKEN_TABLE_NAME: tokenTable.tableName, // Pass the DynamoDB table name
         },
         tokenTable: tokenTable, // Pass the table resource to grant permissions
