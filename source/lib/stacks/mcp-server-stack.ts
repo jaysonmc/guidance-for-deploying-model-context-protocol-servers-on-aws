@@ -59,6 +59,15 @@ export class MCPServerStack extends cdk.Stack {
       containerInsightsV2: ecs.ContainerInsights.ENHANCED
     });
 
+    // Add suppression for Container Insight (V1 - Deprecated) not being Enabled while Container Insight V2 is Enabled with Enhanced
+    NagSuppressions.addResourceSuppressions(this.cluster, [
+      {
+        id: "AwsSolutions-ECS4",
+        reason:
+          "Container Insights V2 is Enabled with Enhanced capabilities, the Nag finding is about Container Insights (V1) which is deprecated",
+      },
+    ]);
+
     // Create context parameter for optional certificate ARN and custom domain
     const certificateArn = this.node.tryGetContext("certificateArn");
     const customDomain = this.node.tryGetContext("customDomain");
