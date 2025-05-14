@@ -56,7 +56,7 @@ export class MCPServerStack extends cdk.Stack {
     // Create shared ECS cluster for all MCP servers
     this.cluster = new ecs.Cluster(this, "MCPCluster", {
       vpc: props.vpc,
-      containerInsights: true,
+      containerInsightsV2: ecs.ContainerInsights.ENHANCED
     });
 
     // Create context parameter for optional certificate ARN and custom domain
