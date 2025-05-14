@@ -60,10 +60,12 @@ export class SecurityStack extends cdk.Stack {
 
     // Add domain for hosted UI
     // Use a simplified stack ID (removing non-compliant characters)
-    const domainPrefix = `mcp-server-${props.resourceSuffix
-      .substring(0, 8)
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "")}`;
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const domainPrefix = `mcp-server-${result}`;
     this.userPool.addDomain("CognitoDomain", {
       cognitoDomain: {
         domainPrefix,
