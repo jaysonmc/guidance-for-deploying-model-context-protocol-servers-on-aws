@@ -4,6 +4,7 @@ import boto3
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.responses import JSONResponse
@@ -18,6 +19,19 @@ load_dotenv()
 
 # Initialize FastMCP server
 mcp = FastMCP('cloudtrail')
+
+# Create SSE transport
+sse = SseServerTransport(f'{BASE_PATH}/messages/')
+
+# MCP SSE handler function
+async def handle_sse(request):
+    async with sse.connect_sse(request.scope, request.receive, request._send) as (
+        read_stream,
+        write_stream,
+    ):
+        await mcp._mcp_server.run(
+            read_stream, write_stream, mcp._mcp_server.create_initialization_options()
+        )
 
 # Create CloudTrail client
 def get_cloudtrail_client():
@@ -199,7 +213,7 @@ if __name__ == '__main__':
     # For simplicity, let's use the built-in run method
     port = int(os.environ.get('PORT', 3000))
 
-    # Create our custom app with the health check
+    # Create our custom app with the health check and SSE endpoints
     app = Starlette(
         routes=[
             Route(f'{BASE_PATH}/', health_check),
@@ -207,8 +221,10 @@ if __name__ == '__main__':
             Route('/', root_health_check),
             # Add specific health check path that matches the CDK configuration
             Route('/cloudtrail-python/', cloudtrail_health_check),
-            # Mount the MCP server to handle tool endpoints
-            Mount(f'{BASE_PATH}/messages/', app=mcp.streamable_http_app()),
+            # Add SSE endpoint
+            Route(f'{BASE_PATH}/sse', endpoint=handle_sse),
+            # Mount the SSE message handler
+            Mount(f'{BASE_PATH}/messages/', app=sse.handle_post_message),
         ],
     )
 

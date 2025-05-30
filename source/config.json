@@ -20,6 +20,13 @@
         "mcp-remote@latest",
         "https://d2k7jfg3ub6u2u.cloudfront.net/weather-nodejs-lambda/mcp"
       ]
+    },
+    "cloudtrail-python": {
+      "command": "npx",
+      "args": [
+        "mcp-remote@latest",
+        "https://d2k7jfg3ub6u2u.cloudfront.net/cloudtrail-python/messages"
+      ]
     }
   }
 }
