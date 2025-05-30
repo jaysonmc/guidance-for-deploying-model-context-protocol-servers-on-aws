@@ -15,10 +15,10 @@ const resourceSuffix = app.node.addr
   .replace(/[^a-z0-9-]/g, "");
 
 const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let domainSuffix = "";
-  for (let i = 0; i < 8; i++) {
-    domainSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+let domainSuffix = "";
+for (let i = 0; i < 8; i++) {
+  domainSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+}
 
 // Get context values for existing VPC if provided
 const existingVpcId = app.node.tryGetContext("existingVpcId");
@@ -44,7 +44,8 @@ const securityStack = new SecurityStack(app, "MCP-Security", {
   },
   vpc: vpcStack.vpc,
   resourceSuffix,
-  domainSuffix: domainSuffix,
+  //domainSuffix: domainSuffix,
+  domainSuffix: 'ucxo5yzy',
 });
 
 // Get the target region (where the MCP server stack will be deployed)

@@ -29,10 +29,8 @@ mcp = FastMCP('weather')
 NWS_API_BASE = 'https://api.weather.gov'
 USER_AGENT = 'weather-app/1.0'
 
-
 # Create SSE transport
 sse = SseServerTransport(f'{BASE_PATH}/messages/')
-
 
 # MCP SSE handler function
 async def handle_sse(request):

@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "weather-sse-python": {
+      "command": "npx",
+      "args": [
+        "mcp-remote@latest",
+        "https://d2k7jfg3ub6u2u.cloudfront.net/weather-python/sse"
+      ]
+    },
+    "weather-streamable-nodejs": {
+      "command": "npx",
+      "args": [
+        "mcp-remote@latest",
+        "https://d2k7jfg3ub6u2u.cloudfront.net/weather-nodejs/mcp"
+      ]
+    },
+    "weather-streamable-nodejs-lambda": {
+      "command": "npx",
+      "args": [
+        "mcp-remote@latest",
+        "https://d2k7jfg3ub6u2u.cloudfront.net/weather-nodejs-lambda/mcp"
+      ]
+    }
+  }
+}

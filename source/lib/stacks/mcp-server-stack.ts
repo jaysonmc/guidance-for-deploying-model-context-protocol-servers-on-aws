@@ -291,6 +291,36 @@ export class MCPServerStack extends cdk.Stack {
         urlParameterName: paramName,
       }
     );
+    
+    // Deploy the CloudTrail Python server with CloudFront
+    const cloudtrailPythonServer = new McpFargateServerConstruct(
+      this,
+      "CloudTrailPythonServer",
+      {
+        platform: {
+          vpc: props.vpc,
+          cluster: this.cluster,
+        },
+        serverName: "CloudTrailPython",
+        serverPath: path.join(
+          __dirname,
+          "../../servers/cloudtrail-query-python"
+        ),
+        healthCheckPath: "/cloudtrail-python/",
+        environment: {
+          PORT: "8080",
+          BASE_PATH: "/cloudtrail-python",
+          AWS_REGION: this.region,
+          COGNITO_USER_POOL_ID: props.cognitoUserPool.userPoolId,
+          COGNITO_CLIENT_ID: props.userPoolClientId,
+          COGNITO_DOMAIN: `mcp-server-${props.domainSuffix}`,
+          TOKEN_TABLE_NAME: tokenTable.tableName, // Pass the DynamoDB table name
+        },
+        tokenTable: tokenTable, // Pass the table resource to grant permissions
+        albSecurityGroup: this.albSecurityGroup,
+        urlParameterName: paramName,
+      }
+    );
 
     // ****************************************************************
     // Model Context Prototcol Server(s) built on Lambda
@@ -423,6 +453,13 @@ export class MCPServerStack extends cdk.Stack {
       action: elbv2.ListenerAction.forward([
         weatherNodeJsLambdaServer.targetGroup,
       ]),
+    });
+    
+    // Add a rule to route CloudTrail Python paths to the CloudTrail server
+    listener.addAction("CloudTrailPythonRoute", {
+      priority: 23,
+      conditions: [elbv2.ListenerCondition.pathPatterns(["/cloudtrail-python/*"])],
+      action: elbv2.ListenerAction.forward([cloudtrailPythonServer.targetGroup]),
     });
 
     // Create CloudFront distribution with protocol matching ALB listener

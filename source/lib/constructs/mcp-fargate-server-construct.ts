@@ -155,6 +155,41 @@ export class McpFargateServerConstruct extends Construct {
         effect: cdk.aws_iam.Effect.ALLOW,
       })
     );
+    
+    // Add CloudTrail permissions if this is the CloudTrail server
+    if (props.serverName === 'CloudTrailPython') {
+      // Use a custom policy instead of the AWS managed policy to follow security best practices
+      taskDefinition.taskRole.addToPrincipalPolicy(
+        new cdk.aws_iam.PolicyStatement({
+          actions: [
+            "cloudtrail:LookupEvents",
+            "cloudtrail:GetTrail",
+            "cloudtrail:GetTrailStatus",
+            "cloudtrail:DescribeTrails",
+            "cloudtrail:ListTrails",
+            "cloudtrail:GetEventSelectors",
+            "cloudtrail:ListTags",
+            "cloudtrail:ListPublicKeys",
+            "cloudtrail:GetInsightSelectors"
+          ],
+          resources: ["*"], // CloudTrail API actions operate at the account level
+          effect: cdk.aws_iam.Effect.ALLOW,
+        })
+      );
+      
+      // Add suppression for the resource wildcard since CloudTrail APIs operate at account level
+      NagSuppressions.addResourceSuppressions(
+        taskDefinition.taskRole,
+        [
+          {
+            id: "AwsSolutions-IAM5",
+            reason: "CloudTrail read-only APIs operate at the account level and don't support resource-level permissions",
+            appliesTo: ["Resource::*"]
+          }
+        ],
+        true
+      );
+    }
 
     // Create log group for container
     const logGroup = new logs.LogGroup(this, `${serverName}Logs`, {

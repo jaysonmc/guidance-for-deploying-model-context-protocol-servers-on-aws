@@ -1,0 +1,13 @@
+{
+  "availability-zones:account=834354037119:region=ca-central-1": [
+    "ca-central-1a",
+    "ca-central-1b",
+    "ca-central-1d"
+  ],
+  "cc-api-provider:account=834354037119:propertiesToReturn.0=PrefixListId:propertyMatch.PrefixListName=com.amazonaws.global.cloudfront.origin-facing:region=ca-central-1:typeName=AWS$:$:EC2$:$:PrefixList": [
+    {
+      "PrefixListId": "pl-38a64351",
+      "Identifier": "pl-38a64351"
+    }
+  ]
+}
